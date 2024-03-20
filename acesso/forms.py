@@ -1,7 +1,14 @@
-from .models import Funcionario
-from django.forms import EmailField, CharField
+from .models import Funcionario, Predio
+from django.forms import EmailField, CharField, ModelForm
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
+
+
+
+class PredioForm(ModelForm):
+    class Meta:
+        model = Predio
+        fields = '__all__'
 
 
 class RegistrationForm(UserCreationForm):
