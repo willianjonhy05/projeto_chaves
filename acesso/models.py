@@ -1,9 +1,8 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.dispatch import receiver
-import qrcode
+from .signals import criar_qrcode 
 from django.db.models.signals import post_save
-from io import BytesIO
+import uuid
 import datetime
 
 # Create your models here.
@@ -70,27 +69,18 @@ class Chave(models.Model):
         verbose_name_plural = "Chaves"
         ordering = ['sala']
 
-@receiver(post_save, sender=Chave)
-def criar_qrcode(sender, instance, created, **kwargs):
-    if created:
-        sala_numero = instance.id
-        qr_code = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
-        qr_code.add_data(sala_numero)
-        qr_code.make(fit=True)
-        qr_code_image = qr_code.make_image()
-
-        stream = BytesIO()
-        qr_code_image.save(stream, "PNG")
-        instance.qr_code.save(f'{instance.sala.numero}.png', stream)
-   
 
 class Aluguel(models.Model):
     usuario = models.ForeignKey(Funcionario, on_delete=models.DO_NOTHING, related_name='usuario_alugueis')
     chave = models.ForeignKey(Chave, on_delete=models.DO_NOTHING, related_name='alugueis') 
-    data_aluguel = models.DateTimeField(auto_now_add=True)
-    data_devolucao = models.DateTimeField(null=True, blank=True)
+    data_aluguel = models.DateTimeField('Data da Retirada da Chave', auto_now_add=True)
+    data_devolucao = models.DateTimeField('Data da devolução', null=True, blank=True)
+    numero = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)  
+
+    def __str__(self):
+        return "{} - {} / {}".format(self.numero, self.usuario.nome, self.chave.sala)
+    
+    class Meta:
+        verbose_name = "Aluguél"
+        verbose_name_plural = "Aluguéis"
+        ordering = ['numero']
